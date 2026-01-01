@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>總部後宮戀愛模擬 | HQ Harem Simulator</title>
+    <title>總部後宮戀愛模擬 | HQ Harem Simulator 3.0 (成人加強版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,117 +12,127 @@
         body { font-family: 'Noto Sans TC', sans-serif; overflow: hidden; background: #000; }
         
         .glass-panel {
-            background: rgba(20, 25, 40, 0.85);
-            backdrop-filter: blur(12px);
+            background: rgba(20, 25, 40, 0.9);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
         }
 
-        .cursor::after {
-            content: '|';
-            animation: blink 1s infinite;
-        }
+        .cursor::after { content: '|'; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
+        /* 立繪基礎設定 */
         .sprite {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: brightness(0.6) grayscale(30%);
-            transform: scale(0.95) translateY(20px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: brightness(0.5) grayscale(60%);
+            transform: scale(0.95) translateY(30px); 
             max-height: 85vh; 
             object-fit: contain;
             object-position: bottom center;
+            pointer-events: none;
         }
+        /* 說話中的角色 */
         .sprite.active {
             filter: brightness(1.05) grayscale(0%);
             transform: scale(1.05) translateY(0);
             z-index: 10;
         }
+        /* 激動/生氣特效 */
+        .sprite.angry {
+            filter: brightness(0.9) sepia(0.5) hue-rotate(-30deg) saturate(2);
+            animation: shake 0.3s infinite;
+        }
+        /* 害羞/色氣特效 */
+        .sprite.shy {
+            filter: brightness(1.1) sepia(0.4) hue-rotate(310deg) saturate(1.8);
+        }
+        /* 喝醉特效 */
+        .sprite.drunk {
+            filter: blur(1px) sepia(0.2) saturate(1.5);
+            animation: sway 2s infinite ease-in-out;
+        }
 
         .shake { animation: shake 0.5s; }
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
             20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
             40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
             60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
             80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
 
-        /* 深夜模式紅暈特效 */
+        @keyframes sway {
+            0%, 100% { transform: rotate(-2deg) translateY(0); }
+            50% { transform: rotate(2deg) translateY(5px); }
+        }
+
+        /* 轉場黑幕 */
+        #fade-overlay {
+            position: absolute; inset: 0; background: black; z-index: 60;
+            opacity: 0; pointer-events: none; transition: opacity 1s ease;
+        }
+        .fade-active { opacity: 1 !important; pointer-events: all !important; }
+
+        /* 氛圍特效 */
         .blush-overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle, transparent 50%, rgba(255, 0, 80, 0.2) 100%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1s;
-            z-index: 5;
+            position: absolute; inset: 0;
+            background: radial-gradient(circle, transparent 40%, rgba(255, 0, 100, 0.2) 100%);
+            pointer-events: none; opacity: 0; transition: opacity 1s; z-index: 5;
         }
         .blush-active { opacity: 1; }
 
+        .drunk-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255, 100, 0, 0.1);
+            backdrop-filter: blur(2px);
+            pointer-events: none; opacity: 0; transition: opacity 1s; z-index: 5;
+        }
+        .drunk-active { opacity: 1; }
+
         #click-catcher { z-index: 40; }
         #choices-overlay { z-index: 50; }
-
-        /* AI 參謀彈窗 */
-        #ai-modal {
-            transition: opacity 0.3s ease;
-        }
-        .ai-loading {
-            animation: pulse 1.5s infinite;
-        }
+        #ai-modal { transition: opacity 0.3s ease; }
+        .ai-loading { animation: pulse 1.5s infinite; }
     </style>
 </head>
 <body class="text-white selection:bg-pink-500 selection:text-white">
 
     <div id="game-stage" class="relative w-full h-screen bg-gray-900 overflow-hidden">
         
+        <!-- 轉場黑幕 -->
+        <div id="fade-overlay"></div>
+
         <!-- 背景層 -->
         <div id="bg-layer" class="absolute inset-0 bg-cover bg-center transition-all duration-1000 transform scale-105" 
              style="background-image: url('https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=1920');">
-            <div class="absolute inset-0 bg-black/40"></div>
+            <div class="absolute inset-0 bg-black/30"></div>
         </div>
 
         <!-- 氛圍層 -->
         <div id="atmosphere" class="blush-overlay"></div>
+        <div id="drunk-atmosphere" class="drunk-overlay"></div>
 
         <!-- 立繪層 -->
-        <div id="sprites-container" class="absolute bottom-0 w-full h-full flex justify-center items-end pointer-events-none pb-0 px-4">
-            <!-- 松霖 -->
-            <img id="sprite-songlin" 
-                 src="songlin.png" 
-                 class="sprite absolute left-[-10%] md:left-[5%] h-[75vh] opacity-0" 
-                 alt="松霖">
-            <!-- 睿承 -->
-            <img id="sprite-ruicheng" 
-                 src="ruicheng.png" 
-                 class="sprite absolute right-[-10%] md:right-[5%] h-[75vh] opacity-0" 
-                 alt="睿承">
-            <!-- 立軒 -->
-            <img id="sprite-lixuan" 
-                 src="lixuan.png" 
-                 class="sprite absolute h-[80vh] opacity-0" 
-                 alt="立軒">
+        <div id="sprites-container" class="absolute bottom-12 md:bottom-16 w-full h-full flex justify-center items-end pointer-events-none pb-0 px-4">
+            <img id="sprite-songlin" src="songlin.png" class="sprite absolute left-[-10%] md:left-[5%] h-[75vh] opacity-0" alt="松霖">
+            <img id="sprite-ruicheng" src="ruicheng.png" class="sprite absolute right-[-10%] md:right-[5%] h-[75vh] opacity-0" alt="睿承">
+            <img id="sprite-lixuan" src="lixuan.png" class="sprite absolute h-[80vh] opacity-0" alt="立軒">
         </div>
 
         <!-- UI 層 -->
-        <div class="absolute top-4 left-4 flex flex-col gap-2 z-50 p-3 rounded-lg bg-black/50 backdrop-blur-sm text-xs md:text-sm opacity-80 hover:opacity-100 transition">
+        <div class="absolute top-4 left-4 flex flex-col gap-2 z-50 p-3 rounded-lg bg-black/50 backdrop-blur-sm text-xs md:text-sm opacity-80 hover:opacity-100 transition border border-white/10">
             <div class="flex items-center gap-2 text-red-400 font-bold"><i class="fas fa-dumbbell w-4"></i> 立軒: <span id="stat-lixuan">0</span></div>
             <div class="flex items-center gap-2 text-blue-400 font-bold"><i class="fas fa-code w-4"></i> 松霖: <span id="stat-songlin">0</span></div>
             <div class="flex items-center gap-2 text-green-400 font-bold"><i class="fas fa-gamepad w-4"></i> 睿承: <span id="stat-ruicheng">0</span></div>
         </div>
 
         <div class="absolute top-4 right-4 z-50 flex gap-2">
-            <!-- AI 按鈕 -->
             <button id="btn-ai" class="px-4 h-10 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 backdrop-blur-sm transition shadow-lg border border-purple-400/50">
                 <i class="fas fa-sparkles text-yellow-300"></i> <span class="hidden md:inline">AI 參謀</span>
             </button>
             <button id="btn-bgm" class="px-4 h-10 rounded-full bg-pink-600 hover:bg-pink-700 text-white flex items-center gap-2 backdrop-blur-sm transition shadow-lg">
-                <i class="fas fa-music"></i> <span id="bgm-text">BGM 準備中</span>
+                <i class="fas fa-music"></i> <span id="bgm-text">BGM</span>
             </button>
             <button onclick="location.reload()" class="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-600 flex items-center justify-center backdrop-blur-sm transition">
                 <i class="fas fa-redo"></i>
@@ -141,77 +151,43 @@
                 <div id="ai-content" class="min-h-[100px] text-gray-200 leading-relaxed text-sm md:text-base">
                     正在連線至戀愛資料庫...
                 </div>
-                <div class="text-xs text-gray-500 text-right italic">Powered by Gemini AI</div>
             </div>
         </div>
 
+        <!-- 對話框 -->
         <div class="absolute bottom-6 left-0 w-full px-4 flex justify-center z-40">
-            <div class="glass-panel w-full max-w-4xl min-h-[180px] rounded-xl p-6 relative flex flex-col">
-                <div id="dialogue-name" class="absolute -top-5 left-8 bg-pink-600 text-white px-6 py-1 rounded-full font-bold shadow-lg transform -skew-x-12 text-lg tracking-wider">???</div>
-                <div id="dialogue-text" class="text-lg md:text-xl leading-relaxed text-gray-100 cursor mt-2">正在載入...</div>
+            <div class="glass-panel w-full max-w-4xl min-h-[180px] rounded-xl p-6 relative flex flex-col hover:border-pink-500/30 transition border border-white/10">
+                <div id="dialogue-name" class="absolute -top-5 left-8 bg-pink-600 text-white px-6 py-1 rounded-full font-bold shadow-lg transform -skew-x-12 text-lg tracking-wider transition-all opacity-0">???</div>
+                <div id="dialogue-text" class="text-lg md:text-xl leading-relaxed text-gray-100 cursor mt-2 drop-shadow-md"></div>
                 <div id="next-indicator" class="absolute bottom-4 right-6 text-pink-400 animate-bounce"><i class="fas fa-chevron-down"></i></div>
             </div>
         </div>
 
         <div id="click-catcher" class="absolute inset-0 cursor-pointer"></div>
-        <div id="choices-overlay" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-4"></div>
+        <div id="choices-overlay" class="hidden absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center gap-4 p-4 transition-all"></div>
 
+        <!-- 標題畫面 -->
         <div id="title-screen" class="absolute inset-0 bg-black z-50 flex flex-col items-center justify-center text-center p-8 transition-opacity duration-1000">
-            <h1 class="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-4">總部後宮戀愛模擬</h1>
-            <p class="text-gray-400 text-xl mb-8">請點擊畫面</p>
-            <button id="start-btn" class="px-8 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-full text-xl font-bold transition shadow-lg shadow-pink-500/30">開始遊戲</button>
+            <h1 class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 mb-6 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">總部後宮<br>戀愛模擬 3.0</h1>
+            <p class="text-gray-400 text-lg mb-10 tracking-widest">關於我與三個直(?)男室友</p>
+            <button id="start-btn" class="px-10 py-4 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-full text-xl font-bold transition transform hover:scale-105 shadow-lg shadow-pink-500/30">
+                開始同居生活
+            </button>
         </div>
 
     </div>
 
     <audio id="bgm-player" loop>
-        <source src="Jimit - Swimming Pool Ketchup.mp3" type="audio/mpeg">
+        <source src="bgm.mp3" type="audio/mpeg">
     </audio>
 
     <script>
-        // --- Gemini API 設定 ---
-        const apiKey = ""; // 系統會自動填入 API Key
-
-        async function callGemini(prompt) {
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-                
-                if (!response.ok) {
-                    // Retry logic with exponential backoff
-                    for (let i = 0; i < 3; i++) {
-                        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
-                        const retryResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        });
-                        if (retryResponse.ok) {
-                            const data = await retryResponse.json();
-                            return data.candidates[0].content.parts[0].text;
-                        }
-                    }
-                    throw new Error('API call failed after retries');
-                }
-
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            } catch (error) {
-                console.error("Gemini API Error:", error);
-                return "系統連線異常...或許這就是愛情的不可預測性吧。（請檢查 API Key 或網路）";
-            }
-        }
-
-        // --- 資源與設定 ---
+        const apiKey = ""; 
+        
         const FALLBACK_IMGS = {
-            "lixuan": "https://api.dicebear.com/7.x/avataaars/svg?seed=Lixuan",
-            "songlin": "https://api.dicebear.com/7.x/avataaars/svg?seed=Songlin",
-            "ruicheng": "https://api.dicebear.com/7.x/avataaars/svg?seed=Ruicheng"
+            "lixuan": "https://api.dicebear.com/7.x/avataaars/svg?seed=Lixuan&hair=short02&facialHair=beardLight&clothing=tankTop",
+            "songlin": "https://api.dicebear.com/7.x/avataaars/svg?seed=Songlin&glasses=round&clothing=hoodie&topChance=100",
+            "ruicheng": "https://api.dicebear.com/7.x/avataaars/svg?seed=Ruicheng&clothing=graphicShirt&accessories=round"
         };
 
         const CHARACTERS = {
@@ -220,7 +196,7 @@
             "lixuan": { name: "駱立軒", color: "text-red-400" },
             "songlin": { name: "吳松霖", color: "text-blue-400" },
             "ruicheng": { name: "蔡睿承", color: "text-green-400" },
-            "waiter": { name: "服務生", color: "text-yellow-200" }
+            "waiter": { name: "店員", color: "text-yellow-200" }
         };
 
         const BACKGROUNDS = {
@@ -231,7 +207,12 @@
             "costco": "https://images.unsplash.com/photo-1583258292688-d0213dc5a3a8?q=80&w=1920",
             "night_street": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=1920",
             "kitchen": "https://images.unsplash.com/photo-1556910103-1c02745a30bf?q=80&w=1920",
-            "bedroom_dark": "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1920" 
+            "bedroom_dark": "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1920",
+            "bathroom": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1920",
+            "pool": "https://images.unsplash.com/photo-1563297298-6e3e4eb97637?q=80&w=1920",
+            "bar": "https://images.unsplash.com/photo-1514362545857-3bc16549766b?q=80&w=1920",
+            "school": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1920",
+            "onsen": "https://images.unsplash.com/photo-1571782298759-42b789729429?q=80&w=1920"
         };
 
         function setupImageFallbacks() {
@@ -245,108 +226,42 @@
         const bgm = document.getElementById('bgm-player');
         const bgmBtn = document.getElementById('btn-bgm');
         const bgmText = document.getElementById('bgm-text');
-        bgmText.innerText = "播放音樂";
-
+        
         function toggleBGM() {
             if (bgm.paused) {
                 bgm.play().then(() => {
-                    bgmBtn.innerHTML = '<i class="fas fa-pause"></i> <span id="bgm-text">暫停音樂</span>';
-                }).catch(err => {
-                    console.log("播放失敗:", err);
-                    bgmText.innerText = "播放失敗";
-                });
+                    bgmBtn.innerHTML = '<i class="fas fa-pause"></i> <span class="hidden md:inline">暫停</span>';
+                }).catch(() => { bgmText.innerText = "靜音中"; });
             } else {
                 bgm.pause();
-                bgmBtn.innerHTML = '<i class="fas fa-play"></i> <span id="bgm-text">播放音樂</span>';
+                bgmBtn.innerHTML = '<i class="fas fa-play"></i> <span class="hidden md:inline">BGM</span>';
             }
         }
         bgmBtn.addEventListener('click', toggleBGM);
 
-        // --- AI 互動邏輯 ---
-        const btnAI = document.getElementById('btn-ai');
-        const aiModal = document.getElementById('ai-modal');
-        const btnCloseAI = document.getElementById('btn-close-ai');
-        const aiContent = document.getElementById('ai-content');
-
-        btnAI.addEventListener('click', async (e) => {
-            e.stopPropagation(); // 防止觸發劇情推進
-            aiModal.classList.remove('hidden');
-            aiContent.innerHTML = '<div class="ai-loading text-purple-300">正在分析戀愛數據，請稍候...</div>';
-
-            // 收集當前狀態
-            const currentSceneData = STORY[state.currentSceneId];
-            const currentStepData = currentSceneData ? currentSceneData[state.sceneStep] : null;
-            
-            let context = `
-            遊戲背景：BL戀愛模擬遊戲《總部後宮》。
-            玩家正在和三位性格迥異的室友同居：
-            1. 駱立軒（立軒）：愛健身、大直男、愛吃、色狼。
-            2. 吳松霖（松霖）：傲嬌、反同但深櫃、工程師、毒舌、不合群。
-            3. 蔡睿承（睿承）：宅男、容易緊張、中英夾雜、動漫迷、英文很爛。
-            
-            目前好感度：
-            - 立軒: ${state.stats.lixuan}
-            - 松霖: ${state.stats.songlin}
-            - 睿承: ${state.stats.ruicheng}
-            
-            目前場景 ID: ${state.currentSceneId}
-            `;
-
-            if (currentStepData && currentStepData.type === 'say') {
-                context += `
-                現在是「${CHARACTERS[currentStepData.who]?.name || currentStepData.who}」正在說話。
-                他說：「${currentStepData.text}」
-                `;
-            } else if (currentStepData && currentStepData.type === 'choice') {
-                context += `玩家現在面臨選擇題。`;
-            } else {
-                context += `現在是旁白或過場。`;
-            }
-
-            const prompt = `
-            ${context}
-            
-            請扮演一個「總部 AI 戀愛參謀」，用幽默、有點毒舌、但又有建設性的語氣，給予玩家一句簡短的建議或吐槽（50字以內）。
-            針對目前的情況，分析哪位男角最有機會，或者警告玩家小心什麼。
-            也可以吐槽關於這些人誰看起來最像同性戀。
-            請使用繁體中文回答。
-            `;
-
-            const aiResponse = await callGemini(prompt);
-            aiContent.innerText = aiResponse;
-        });
-
-        btnCloseAI.addEventListener('click', (e) => {
-            e.stopPropagation();
-            aiModal.classList.add('hidden');
-        });
-
-        // 點擊遮罩關閉 AI 視窗
-        aiModal.addEventListener('click', (e) => {
-            if (e.target === aiModal) {
-                aiModal.classList.add('hidden');
-            }
-        });
-
-
-        // --- 遊戲劇本 ---
-        let state = { currentSceneId: 'prologue_start', sceneStep: 0, stats: { lixuan: 0, songlin: 0, ruicheng: 0 }, isTyping: false };
+        let state = { 
+            currentSceneId: 'prologue_start', 
+            sceneStep: 0, 
+            stats: { lixuan: 0, songlin: 0, ruicheng: 0 }, 
+            flags: {},
+            isTyping: false 
+        };
 
         const STORY = {
-            // === 序章 ~ 第五章 (保持不變) ===
+            // === 序章 ===
             "prologue_start": [
                 { type: "bg", src: BACKGROUNDS.hotpot },
                 { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
                 { type: "say", who: "narrator", text: "序章：壽星的（自費）受難日" },
-                { type: "say", who: "narrator", text: "空氣中瀰漫著麻辣鍋的香氣，以及結帳前夕的尷尬沈默。" },
+                { type: "say", who: "narrator", text: "空氣中瀰漫著麻辣鍋的香氣，以及...結帳前夕的尷尬沈默。" },
                 { type: "say", who: "waiter", text: "不好意思，請問這桌是一起結嗎？" },
                 { type: "effect", name: "shake" },
                 { type: "active", char: "lixuan" },
                 { type: "say", who: "lixuan", text: "咳，按照常態分佈理論，壽星的錢包應該是收斂的。也就是說——我不應該付錢。" },
                 { type: "active", char: "songlin" },
-                { type: "say", who: "songlin", text: "社會契約論不是讓你用來白吃白喝的。你剛剛一個人吃了五人份的肉，還搶了我的鴨血。" },
+                { type: "say", who: "songlin", text: "（冷笑）社會契約論不是讓你用來白吃白喝的。你剛剛一個人吃了五人份的肉。" },
                 { type: "active", char: "ruicheng" },
-                { type: "say", who: "ruicheng", text: "Wait...這金額有點 aggressive。我現在是 Neet，資產流動性有點問題。No offense，立軒根本是卡比獸。" },
+                { type: "say", who: "ruicheng", text: "Wait...這金額有點 aggressive。我現在是 Neet，資產流動性有點問題。No offense，立軒你根本是卡比獸。" },
                 { type: "active", char: "lixuan" },
                 { type: "say", who: "lixuan", text: "欸，你是最愛我的室友吧？你看，他們兩個一個沒人性、一個沒錢。今晚我也許可以...讓你參觀我的臥室？" },
                 { type: "choice", options: [
@@ -356,63 +271,252 @@
                 ]}
             ],
             "prologue_AA": [
-                { type: "active", char: "songlin" }, { type: "say", who: "songlin", text: "（冷笑）聽到了沒？這才是公平正義。" },
-                { type: "active", char: "lixuan" }, { type: "say", who: "lixuan", text: "小氣鬼...切，付就付。" },
-                { type: "jump", next: "chapter2_start" }
+                { type: "active", char: "songlin" }, { type: "say", who: "songlin", text: "聽到了沒？這才叫公平正義。" },
+                { type: "active", char: "lixuan" }, { type: "say", who: "lixuan", text: "嘖，小氣鬼...好啦付就付。" },
+                { type: "jump", next: "chapter1_5_start" }
             ],
             "prologue_treat": [
-                { type: "active", char: "lixuan" }, { type: "say", who: "lixuan", text: "我就知道你暗戀我！晚上房門不鎖喔！" },
+                { type: "active", char: "lixuan" }, { type: "effect", char: "lixuan", name: "shy" }, { type: "say", who: "lixuan", text: "我就知道你暗戀我！晚上房門不鎖喔！" },
                 { type: "active", char: "songlin" }, { type: "say", who: "songlin", text: "（翻白眼）你就寵他吧，遲早被吃垮。" },
-                { type: "jump", next: "chapter2_start" }
+                { type: "jump", next: "chapter1_5_start" }
             ],
             "prologue_split": [
                 { type: "active", char: "lixuan" }, { type: "say", who: "lixuan", text: "嘿嘿，還是室友對我最好。" },
-                { type: "active", char: "ruicheng" }, { type: "say", who: "ruicheng", text: "什麼？我要出錢？No!!! 我要破產了！" },
+                { type: "active", char: "ruicheng" }, { type: "effect", char: "ruicheng", name: "angry" }, { type: "say", who: "ruicheng", text: "什麼？我要出錢？No!!! 我要破產了！我的虛擬貨幣還在跌啊！" },
+                { type: "jump", next: "chapter1_5_start" }
+            ],
+
+            // === Chapter 1.5 ===
+            "chapter1_5_start": [
+                { type: "effect", name: "fade_out" },
+                { type: "bg", src: BACKGROUNDS.bathroom },
+                { type: "effect", name: "fade_in" },
+                { type: "hide", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "隔天早上 8:30。總部唯一的廁所前。" },
+                { type: "show", chars: ["lixuan", "songlin"] },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "（拍門）睿承你死在裡面了嗎？根據排程，現在是我的大便時間！" },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "你能不能小聲點？我昨天寫 Code 寫到四點，現在頭很痛。" },
+                { type: "say", who: "narrator", text: "廁所門開了，睿承一臉虛脫地走出來，眼鏡全是霧氣。" },
+                { type: "show", chars: ["ruicheng"] },
+                { type: "active", char: "ruicheng" },
+                { type: "say", who: "ruicheng", text: "I'm alive... 剛剛在裡面看 VTuber 直播，太感動了，不知不覺就..." },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "滾開！括約肌極限了！" },
+                { type: "say", who: "narrator", text: "立軒衝進去，但在門關上前，你看見他好像沒穿內褲..." },
+                { type: "choice", options: [
+                    { text: "無視這一切，去準備早餐", next: "ch1_5_breakfast", stat: { songlin: 5 } },
+                    { text: "吐槽：「立軒你屁股好白。」", next: "ch1_5_butt", stat: { lixuan: 10 } }
+                ]}
+            ],
+            "ch1_5_breakfast": [
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "還是你正常點。這兩個根本是原始人。" },
                 { type: "jump", next: "chapter2_start" }
             ],
+            "ch1_5_butt": [
+                { type: "say", who: "narrator", text: "廁所裡傳來立軒得意的笑聲：「是不是！我有在練臀推！」" },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "......變態。" },
+                { type: "jump", next: "chapter2_start" }
+            ],
+
+            // === Chapter 2 ===
             "chapter2_start": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.livingroom },
-                { type: "say", who: "narrator", text: "第二章：週末的廢人熵增定律" },
+                { type: "effect", name: "fade_in" },
+                { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "遊戲耍費" },
+                { type: "say", who: "narrator", text: "大家決定玩《迴力鏢大亂鬥》來決定誰去拿外送。" },
                 { type: "active", char: "lixuan" },
-                { type: "say", who: "lixuan", text: "根據博弈論，這時候我搶走松霖的星星是最佳解。別怪我，這就是資本主義。" },
+                { type: "say", who: "lixuan", text: "根據背刺定理，這時候我偷偷背刺松霖是最佳解。別怪我，這就是資本主義。" },
                 { type: "effect", name: "shake" },
                 { type: "active", char: "songlin" },
-                { type: "say", who: "songlin", text: "......你是白癡嗎？現在領先的是睿承，你搶我幹嘛？" },
+                { type: "effect", char: "songlin", name: "angry" },
+                { type: "say", who: "songlin", text: "......你是白癡嗎？現在領先的是睿承，你搶我幹嘛？而且那是貝式定理吧" },
                 { type: "active", char: "ruicheng" },
-                { type: "say", who: "ruicheng", text: "Oh my god... 這個骰子有毒。立軒你的玩法真的 disgusting。" },
+                { type: "say", who: "ruicheng", text: "Oh my god... 這個飛雷神根本是作弊 (Cheat)。立軒你的玩法真的 disgusting。" },
                 { type: "choice", options: [
-                    { text: "幫松霖嗆立軒", next: "ch2_help_songlin", stat: { songlin: 15 } },
-                    { text: "跟立軒一起鬧", next: "ch2_help_lixuan", stat: { lixuan: 15 } },
-                    { text: "安撫睿承", next: "ch2_help_ruicheng", stat: { ruicheng: 15 } }
+                    { text: "幫松霖嗆立軒", next: "ch2_help_songlin", stat: { songlin: 15 }, flag: "helped_songlin" },
+                    { text: "跟立軒一起鬧", next: "ch2_help_lixuan", stat: { lixuan: 15 }, flag: "helped_lixuan" },
+                    { text: "安撫睿承", next: "ch2_help_ruicheng", stat: { ruicheng: 15 }, flag: "helped_ruicheng" }
                 ]}
             ],
             "ch2_help_songlin": [
-                { type: "active", char: "songlin" }, { type: "say", who: "songlin", text: "（眼神亮了一下）哼，算你還有點良心。" }, { type: "jump", next: "chapter3_start" }
+                { type: "active", char: "songlin" }, { type: "say", who: "songlin", text: "（嘴角微微上揚）哼，算你還有點良心。今晚我請你喝一杯。" }, { type: "jump", next: "chapter2_5_typhoon" }
             ],
             "ch2_help_lixuan": [
-                { type: "active", char: "lixuan" }, { type: "say", who: "lixuan", text: "（大笑拍你大腿）這就是默契！我們是掠奪者聯盟！" }, { type: "jump", next: "chapter3_start" }
+                { type: "active", char: "lixuan" }, { type: "say", who: "lixuan", text: "（大笑拍你大腿）這就是默契！我們是掠奪者聯盟！" }, { type: "jump", next: "chapter2_5_typhoon" }
             ],
             "ch2_help_ruicheng": [
-                { type: "active", char: "ruicheng" }, { type: "say", who: "ruicheng", text: "（推眼鏡）Good strategy。文明人就該互相幫助。" }, { type: "jump", next: "chapter3_start" }
+                { type: "active", char: "ruicheng" }, { type: "say", who: "ruicheng", text: "（推眼鏡）Good strategy。文明人就該互相幫助。我們結盟吧！" }, { type: "jump", next: "chapter2_5_typhoon" }
             ],
+
+            // === Chapter 2.5 ===
+            "chapter2_5_typhoon": [ 
+                { type: "effect", name: "fade_out" },
+                { type: "bg", src: BACKGROUNDS.livingroom }, 
+                { type: "effect", name: "fade_in" },
+                { type: "hide", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "幾天後，強烈颱風來襲。突然，「啪」的一聲，總部一片漆黑。" },
+                { type: "say", who: "ruicheng", text: "呀啊啊啊啊啊！" },
+                { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "active", char: "ruicheng" },
+                { type: "effect", char: "ruicheng", name: "angry" },
+                { type: "say", who: "ruicheng", text: "停電了？！Wi-Fi 斷了嗎？Server 斷了嗎？世界末日了嗎？！" },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "吵死了，只是跳電吧。我去看看總開關...哇靠，撞到腳趾！" },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "......（即使在黑暗中，你也能感覺到松霖正縮在沙發角落，他怕黑）" },
+                { type: "choice", options: [
+                    { text: "坐在松霖旁邊陪他", next: "ch2_5_sit_songlin", stat: { songlin: 20 } },
+                    { text: "拿手電筒幫立軒照路", next: "ch2_5_help_lixuan", stat: { lixuan: 10 } },
+                    { text: "分享手機熱點給睿承", next: "ch2_5_wifi_ruicheng", stat: { ruicheng: 15 } }
+                ]}
+            ],
+            "ch2_5_sit_songlin": [
+                { type: "active", char: "songlin" }, 
+                { type: "say", who: "songlin", text: "......你靠那麼近幹嘛？熱死了。" },
+                { type: "say", who: "songlin", text: "（但他偷偷抓住了你的衣角，手心全是汗）" },
+                { type: "jump", next: "chapter_pool_start" }
+            ],
+            "ch2_5_help_lixuan": [
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "謝啦兄弟。這種時候還是體力派靠得住。你看他們兩個廢物。" },
+                { type: "jump", next: "chapter_pool_start" }
+            ],
+            "ch2_5_wifi_ruicheng": [
+                { type: "active", char: "ruicheng" },
+                { type: "say", who: "ruicheng", text: "你是神！你是 Savior！連上網了...心跳恢復正常了..." },
+                { type: "jump", next: "chapter_pool_start" }
+            ],
+
+            // === 新增：Chapter 2.6 撞球篇 ===
+            "chapter_pool_start": [
+                { type: "effect", name: "fade_out" },
+                { type: "bg", src: BACKGROUNDS.pool },
+                { type: "effect", name: "fade_in" },
+                { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "撞球間的桿法教學" },
+                { type: "say", who: "narrator", text: "週末晚上，為了慶祝復電，大家來到了撞球館。氣氛有點微妙。" },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "嘿嘿，讓你們見識一下什麼叫「一桿進洞」。我的技術可是有練過的，各種姿勢都行。" },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "你講話能不能不要這麼噁心？" },
+                { type: "active", char: "ruicheng" },
+                { type: "say", who: "ruicheng", text: "根據 Vector calculation，這個角度反彈的機率是 32.5%..." },
+                { type: "say", who: "narrator", text: "輪到你了，但你的姿勢似乎不太標準。" },
+                { type: "choice", options: [
+                    { text: "請駱立軒教你", next: "pool_lixuan", stat: { lixuan: 20 } },
+                    { text: "和吳松霖比賽", next: "pool_songlin", stat: { songlin: 20 } },
+                    { text: "聽蔡睿承分析物理", next: "pool_ruicheng", stat: { ruicheng: 20 } }
+                ]}
+            ],
+            "pool_lixuan": [
+                { type: "hide", chars: ["songlin", "ruicheng"] },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "笨死了，這樣怎麼用力？來，我教你。" },
+                { type: "say", who: "narrator", text: "他走到你身後，胸膛緊緊貼著你的背。你可以感覺到他說話時胸腔的震動。" },
+                { type: "effect", char: "lixuan", name: "shy" },
+                { type: "say", who: "lixuan", text: "腰壓低一點...屁股翹太高了，雖然我不討厭啦。" },
+                { type: "say", who: "narrator", text: "他的大手包覆住你握桿的手，熱度透過手背傳來。他在你耳邊低語：" },
+                { type: "say", who: "lixuan", text: "放輕鬆，這種事...要靠感覺，不是靠蠻力。慢慢推出去..." },
+                { type: "jump", next: "chapter_bar_start" }
+            ],
+            "pool_songlin": [
+                { type: "hide", chars: ["lixuan", "ruicheng"] },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "想贏我？下輩子吧。" },
+                { type: "say", who: "narrator", text: "松霖脫掉了外套，捲起襯衫袖子，露出精實的小臂線條。他俯身瞄準時，眼神專注得讓你心跳漏了一拍。" },
+                { type: "say", who: "songlin", text: "看什麼看？看球。如果我贏了，今晚你要聽我的。" },
+                { type: "say", who: "narrator", text: "他一桿清台，然後走到你面前，用球桿輕輕挑起你的下巴。" },
+                { type: "effect", char: "songlin", name: "shy" },
+                { type: "say", who: "songlin", text: "願賭服輸。笨蛋。" },
+                { type: "jump", next: "chapter_bar_start" }
+            ],
+            "pool_ruicheng": [
+                { type: "hide", chars: ["lixuan", "songlin"] },
+                { type: "active", char: "ruicheng" },
+                { type: "say", who: "ruicheng", text: "Look，只要在這裡施加一個力矩 (Torque)..." },
+                { type: "say", who: "narrator", text: "他興奮地抓著你的手比劃，完全忘記了社交距離。他的臉離你只有幾公分。" },
+                { type: "effect", char: "ruicheng", name: "shy" },
+                { type: "say", who: "ruicheng", text: "啊... No offense！我只是想說...你的手型很完美 (Perfect form)。" },
+                { type: "say", who: "narrator", text: "他慌亂地推了推眼鏡，但沒有放開你的手。" },
+                { type: "jump", next: "chapter_bar_start" }
+            ],
+
+            // === 新增：Chapter 2.8 酒吧篇 ===
+            "chapter_bar_start": [
+                { type: "effect", name: "fade_out" },
+                { type: "bg", src: BACKGROUNDS.bar },
+                { type: "effect", name: "fade_in" },
+                { type: "effect", name: "drunk" },
+                { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "爛醉的麥當勞外交" },
+                { type: "say", who: "narrator", text: "撞球後，大家去了圓山酒吧續攤。三輪 Shot 下去，場面已經失控了。" },
+                { type: "active", char: "songlin" },
+                { type: "effect", char: "songlin", name: "drunk" },
+                { type: "say", who: "songlin", text: "（趴在桌上）......你們都是笨蛋。只有我...只有我最聰明...嗝。" },
+                { type: "active", char: "ruicheng" },
+                { type: "effect", char: "ruicheng", name: "drunk" },
+                { type: "say", who: "ruicheng", text: "System overload... 我要重啟... 啟動安全模式 (Safety Mode)..." },
+                { type: "active", char: "lixuan" },
+                { type: "effect", char: "lixuan", name: "drunk" },
+                { type: "say", who: "lixuan", text: "快點考我公式！！！而且我好餓！我要吃麥當勞！現在！Right Now！" },
+                { type: "say", who: "narrator", text: "你們搖搖晃晃地走進隔壁的麥當勞。立軒突然衝向櫃檯。" },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "（緊握店員的手）對不起我覺得我剛剛太吵了！I love you！" },
+                { type: "say", who: "waiter", text: "先生...請放手...您的手有點油..." },
+                { type: "choice", options: [
+                    { text: "把立軒拖走，太丟臉了", next: "bar_drag_lixuan", stat: { songlin: 10 } },
+                    { text: "照顧快吐的松霖", next: "bar_care_songlin", stat: { songlin: 20 } },
+                    { text: "陪睿承一起蹲在地上", next: "bar_squat_ruicheng", stat: { ruicheng: 20 } }
+                ]}
+            ],
+            "bar_drag_lixuan": [
+                { type: "say", who: "narrator", text: "你把立軒架走。他整個人掛在你身上，嘴裡還塞著薯餅。" },
+                { type: "say", who: "lixuan", text: "唔...你身上好香...比薯餅還香...讓我咬一口..." },
+                { type: "say", who: "narrator", text: "他真的往你的脖子蹭過來，濕熱的氣息噴在鎖骨上。" },
+                { type: "jump", next: "chapter3_start" }
+            ],
+            "bar_care_songlin": [
+                { type: "say", who: "narrator", text: "你拍著松霖的背。他抬起頭，眼神迷離且濕潤。" },
+                { type: "say", who: "songlin", text: "......如果不舒服，你會一直這樣拍我嗎？" },
+                { type: "say", who: "songlin", text: "那我想...再不舒服久一點。" },
+                { type: "jump", next: "chapter3_start" }
+            ],
+            "bar_squat_ruicheng": [
+                { type: "say", who: "narrator", text: "睿承抱著頭蹲在角落防禦力場全開。你也蹲在他旁邊。" },
+                { type: "say", who: "ruicheng", text: "敵人...消失了嗎？這裡好亮...好可怕..." },
+                { type: "say", who: "ruicheng", text: "（握住你的手）Detecting ally. 請不要離開防護罩範圍。" },
+                { type: "jump", next: "chapter3_start" }
+            ],
+
+            // === Chapter 3 (Gym) ===
             "chapter3_start": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.gym },
-                { type: "say", who: "narrator", text: "第三章：費洛蒙爆發的深蹲架" },
+                { type: "effect", name: "fade_in" },
+                { type: "effect", name: "normal" }, // Reset effects
+                { type: "say", who: "narrator", text: "性張力爆發的深蹲架" },
                 { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
                 { type: "active", char: "songlin" },
-                { type: "say", who: "songlin", text: "唔......嘖！（深蹲腿軟）" },
+                { type: "say", who: "songlin", text: "唔......嘖！（深蹲挑戰大重量，雙腿開始顫抖）" },
                 { type: "choice", options: [
                     { text: "站在旁邊看戲", next: "ch3_watch_songlin" },
                     { text: "上前幫忙扶", next: "ch3_help_songlin", stat: { songlin: 20 } }
                 ]}
             ],
             "ch3_watch_songlin": [
-                { type: "say", who: "songlin", text: "沒用的東西，不會幫忙嗎？" }, { type: "jump", next: "ch3_lixuan_event" }
+                { type: "say", who: "songlin", text: "沒用的東西，不會幫忙嗎？（勉強站起來）" }, { type: "jump", next: "ch3_lixuan_event" }
             ],
             "ch3_help_songlin": [
                 { type: "say", who: "narrator", text: "你衝到他身後虛扶。因為距離太近，當他施力時，屁股結結實實地撞上了你的下半身。" },
                 { type: "active", char: "songlin" },
-                { type: "say", who: "songlin", text: "......你是故意的嗎？（耳根紅透）" },
+                { type: "effect", char: "songlin", name: "shy" },
+                { type: "say", who: "songlin", text: "......！你是故意的嗎？（耳根瞬間紅透，眼神飄移）" },
                 { type: "jump", next: "ch3_lixuan_event" }
             ],
             "ch3_lixuan_event": [
@@ -421,59 +525,149 @@
                 { type: "say", who: "narrator", text: "你去更衣室上廁所，剛好看到駱立軒剛沖完澡走出來。全裸，只用毛巾擦頭。" },
                 { type: "choice", options: [
                     { text: "低頭快速通過", next: "ch3_ignore_lixuan" },
-                    { text: "轉頭瞄一眼", next: "ch3_look_lixuan", stat: { lixuan: 20 } }
+                    { text: "轉頭看一眼", next: "ch3_look_lixuan", stat: { lixuan: 20 } }
                 ]}
             ],
             "ch3_ignore_lixuan": [
                 { type: "say", who: "lixuan", text: "欸？走那麼快幹嘛？怕自卑喔？" }, { type: "jump", next: "ch3_ruicheng_event" }
             ],
             "ch3_look_lixuan": [
-                { type: "say", who: "narrator", text: "你們四目相對。他完全沒遮，反而故意挺了一下腰。" },
-                { type: "say", who: "lixuan", text: "怎樣？實體考察？我不介意你過來量一下尺寸。" }, { type: "jump", next: "ch3_ruicheng_event" }
+                { type: "say", who: "narrator", text: "你們四目相對。他完全沒遮，反而故意挺了一下腰，露出那充滿野性的線條。" },
+                { type: "say", who: "lixuan", text: "怎樣？實體考察？我不介意你過來量一下尺寸，數據很漂亮喔。" }, { type: "jump", next: "ch3_ruicheng_event" }
             ],
             "ch3_ruicheng_event": [
                 { type: "show", chars: ["ruicheng"] },
                 { type: "active", char: "ruicheng" },
-                { type: "say", who: "ruicheng", text: "My legs... they are gone. 我覺得我的肌纖維正在解離..." },
+                { type: "say", who: "ruicheng", text: "My legs... they are gone. 我覺得我的肌纖維正在解離 (Dissociating)..." },
                 { type: "choice", options: [
                     { text: "叫立軒把他扛回去", next: "ch3_carry_ruicheng" },
                     { text: "親自攙扶他", next: "ch3_help_ruicheng", stat: { ruicheng: 20 } }
                 ]}
             ],
             "ch3_carry_ruicheng": [
-                { type: "say", who: "narrator", text: "立軒像扛瓦斯桶一樣把他扛走，睿承一路尖叫。" }, { type: "jump", next: "chapter4_start" }
+                { type: "say", who: "narrator", text: "立軒像扛瓦斯桶一樣把他扛走，睿承一路尖叫。" }, { type: "jump", next: "chapter_exam_start" }
             ],
             "ch3_help_ruicheng": [
-                { type: "say", who: "narrator", text: "你摟住他的腰。他整個人掛在你身上，心跳快得不正常。你感覺到他的大腿間有東西碰到你，但並不是手機或錢包。" },
-                { type: "say", who: "ruicheng", text: "Wait...這不科學。難道是腎上腺素？" }, { type: "jump", next: "chapter4_start" }
+                { type: "say", who: "narrator", text: "你摟住他的腰。他整個人掛在你身上，心跳快得不正常。你感覺到他的大腿間有東西碰到你，但並不是手機或錢包。。。" },
+                { type: "effect", char: "ruicheng", name: "shy" },
+                { type: "say", who: "ruicheng", text: "Wait...這不科學。難道是腎上腺素？還是...（他偷看了你一眼）" }, { type: "jump", next: "chapter_exam_start" }
             ],
+
+            // === 新增：Chapter 3.5 考場篇 ===
+            "chapter_exam_start": [
+                { type: "effect", name: "fade_out" },
+                { type: "bg", src: BACKGROUNDS.school },
+                { type: "effect", name: "fade_in" },
+                { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "台大考場的社死現場" },
+                { type: "say", who: "narrator", text: "今天是立軒考研究所的大日子。為了展現室友愛，你們決定去考場「加油」。" },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "一定要舉這個嗎？我真的很想死。" },
+                { type: "say", who: "narrator", text: "你、松霖和睿承站在校門口，拉開了一條巨大的紅布條，上面寫著：" },
+                { type: "say", who: "narrator", text: "『恭祝佛光大學駱立軒 必勝！台大統計所未來的種馬！』" },
+                { type: "active", char: "ruicheng" },
+                { type: "say", who: "ruicheng", text: "這羞恥度 (Shame level) 突破天際了。路人都在看我們..." },
+                { type: "say", who: "narrator", text: "立軒走出來了，看到布條的瞬間，他臉上的表情很精彩。" },
+                { type: "active", char: "lixuan" },
+                { type: "effect", char: "lixuan", name: "shy" },
+                { type: "say", who: "lixuan", text: "幹！！！你們在衝三小啦！" },
+                { type: "choice", options: [
+                    { text: "大喊：「立軒我愛你！」", next: "exam_yell", stat: { lixuan: 30 } },
+                    { text: "裝作不認識他，把布條丟給松霖", next: "exam_hide", stat: { songlin: -5, lixuan: -5 } }
+                ]}
+            ],
+            "exam_yell": [
+                { type: "say", who: "lixuan", text: "（衝過來摀住你的嘴）閉嘴啦！......媽的，回去再收拾你。" },
+                { type: "say", who: "narrator", text: "雖然嘴上在罵，但他耳朵紅透了，嘴角還掛著掩飾不住的笑意。" },
+                { type: "jump", next: "chapter_trip_start" }
+            ],
+            "exam_hide": [
+                { type: "active", char: "songlin" },
+                { type: "effect", char: "songlin", name: "angry" },
+                { type: "say", who: "songlin", text: "喂！你這叛徒！" },
+                { type: "jump", next: "chapter_trip_start" }
+            ],
+
+            // === 新增：Chapter 3.8 過夜篇 ===
+            "chapter_trip_start": [
+                { type: "effect", name: "fade_out" },
+                { type: "bg", src: BACKGROUNDS.onsen },
+                { type: "effect", name: "fade_in" },
+                { type: "effect", name: "blush" },
+                { type: "show", chars: ["lixuan", "songlin", "ruicheng"] },
+                { type: "say", who: "narrator", text: "溫泉旅館的混浴危機" },
+                { type: "say", who: "narrator", text: "考完試放鬆，大家來到了溫泉旅館。但因為訂錯房，四個大男人只有一間房、一張大通鋪。" },
+                { type: "active", char: "lixuan" },
+                { type: "say", who: "lixuan", text: "這不是正好嗎？裸裎相見啊！誰不敢脫誰是小狗。" },
+                { type: "active", char: "songlin" },
+                { type: "say", who: "songlin", text: "......噁心。別靠近我。" },
+                { type: "say", who: "narrator", text: "深夜，大家都睡了。但因為太擠，你感覺到身邊的人靠得很近。" },
+                { type: "say", who: "narrator", text: "一隻手在棉被下不小心碰到了你的大腿內側。" },
+                { type: "choice", options: [
+                    { text: "那是立軒的手", next: "trip_hand_lixuan", stat: { lixuan: 25 } },
+                    { text: "那是松霖的手", next: "trip_hand_songlin", stat: { songlin: 25 } },
+                    { text: "那是睿承的手", next: "trip_hand_ruicheng", stat: { ruicheng: 25 } }
+                ]}
+            ],
+            "trip_hand_lixuan": [
+                { type: "say", who: "narrator", text: "手掌粗糙且滾燙。他立刻反握住你，手指曖昧地摩娑著你的掌心。" },
+                { type: "say", who: "lixuan", text: "（氣音）...還沒睡啊？壞孩子。" },
+                { type: "jump", next: "chapter4_start" }
+            ],
+            "trip_hand_songlin": [
+                { type: "say", who: "narrator", text: "手掌冰涼細緻。他僵硬了一下，卻沒有移開。過了許久，你感覺到他把你往他胯下的方向拉了一點點。" },
+                { type: "say", who: "songlin", text: "（夢話）...笨蛋。" },
+                { type: "jump", next: "chapter4_start" }
+            ],
+            "trip_hand_ruicheng": [
+                { type: "say", who: "narrator", text: "手掌微微發抖。被你發現後，他反而緊緊抓住了你的衣角，像是找到了安全感。" },
+                { type: "say", who: "ruicheng", text: "（氣音）...Loading complete." },
+                { type: "jump", next: "chapter4_start" }
+            ],
+
+            // === Chapter 4 (Sick) ===
             "chapter4_start": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.bedroom_sick },
+                { type: "effect", name: "fade_in" },
+                { type: "effect", name: "normal" },
                 { type: "hide", chars: ["lixuan", "songlin", "ruicheng"] },
                 { type: "say", who: "narrator", text: "第四章：脆弱的熱度與誤診的愛" },
-                { type: "say", who: "narrator", text: "你發高燒了。半夜，有人走到了你的床邊。這時候，你希望是誰？" },
+                { type: "say", who: "narrator", text: "或許是溫泉泡太久著涼了，你回家後就倒下了。高燒 39.5 度。" },
+                { type: "say", who: "narrator", text: "你在迷糊中感覺非常冷，極度渴望某個人的溫度...你希望是誰？" },
                 { type: "choice", options: [
-                    { text: "駱立軒 (守護犬)", next: "ch4_lixuan_scene" },
-                    { text: "吳松霖 (傲嬌崩塌)", next: "ch4_songlin_scene" },
-                    { text: "蔡睿承 (系統重啟)", next: "ch4_ruicheng_scene" }
+                    { text: "選擇 駱立軒", next: "ch4_lixuan_scene" },
+                    { text: "選擇 吳松霖", next: "ch4_songlin_scene" },
+                    { text: "選擇 蔡睿承", next: "ch4_ruicheng_scene" }
                 ]}
             ],
             "ch4_lixuan_scene": [
                 { type: "show", chars: ["lixuan"] }, { type: "active", char: "lixuan" },
-                { type: "say", who: "lixuan", text: "好，我不走，老子哪都不去。" }, { type: "jump", next: "chapter5_start", stat: { lixuan: 30 } }
+                { type: "say", who: "lixuan", text: "（握住你的手）媽的...我還以為你覺得我很煩。好，我不走，老子哪都不去。" }, 
+                { type: "say", who: "narrator", text: "他像隻大型犬一樣趴在你床邊守了一整晚。" },
+                { type: "jump", next: "chapter5_start", stat: { lixuan: 30 } }
             ],
             "ch4_songlin_scene": [
                 { type: "show", chars: ["songlin"] }, { type: "active", char: "songlin" },
-                { type: "say", who: "songlin", text: "......知道了，笨蛋。我就在這裡。" }, { type: "jump", next: "chapter5_start", stat: { songlin: 30 } }
+                { type: "say", who: "songlin", text: "（幫你換冰枕）......知道了，笨蛋。我就在這裡。哪有人生病還這麼會撒嬌的..." }, 
+                { type: "say", who: "narrator", text: "雖然嘴巴壞，但他整晚沒睡，確認你的體溫。" },
+                { type: "jump", next: "chapter5_start", stat: { songlin: 30 } }
             ],
             "ch4_ruicheng_scene": [
                 { type: "show", chars: ["ruicheng"] }, { type: "active", char: "ruicheng" },
-                { type: "say", who: "ruicheng", text: "Copy that. 我會守護你的主機。" }, { type: "jump", next: "chapter5_start", stat: { ruicheng: 30 } }
+                { type: "say", who: "ruicheng", text: "（額頭貼額頭）Copy that. 我會守護你的主機，直到系統重啟 (System Reboot)。" }, 
+                { type: "say", who: "narrator", text: "他雖然發抖，但眼神前所未有的堅定。" },
+                { type: "jump", next: "chapter5_start", stat: { ruicheng: 30 } }
             ],
+
+            // === Chapter 5 (Costco) ===
             "chapter5_start": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.costco },
+                { type: "effect", name: "fade_in" },
                 { type: "hide", chars: ["lixuan", "songlin", "ruicheng"] },
                 { type: "say", who: "narrator", text: "第五章：好市多的試吃與手溫" },
+                { type: "say", who: "narrator", text: "病癒後的週末，那天照顧你的人提議去採買。其他兩人識相地迴避了。" },
                 { type: "choice", options: [
                     { text: "和 駱立軒 一起去", next: "ch5_lixuan_date" },
                     { text: "和 吳松霖 一起去", next: "ch5_songlin_date" },
@@ -482,30 +676,39 @@
             ],
             "ch5_lixuan_date": [
                 { type: "show", chars: ["lixuan"] }, { type: "active", char: "lixuan" },
-                { type: "say", who: "lixuan", text: "這盒好。我們就買這盒，夠我們兩個人吃很久。" }, { type: "jump", next: "chapter6_start", stat: { lixuan: 20 } }
+                { type: "say", who: "lixuan", text: "這盒牛肉好。我們就買這盒，夠我們『兩個人』吃很久。" }, 
+                { type: "say", who: "narrator", text: "他故意把手覆蓋在你的手上，掌心的繭摩擦著你的皮膚。" },
+                { type: "jump", next: "chapter6_start", stat: { lixuan: 20 } }
             ],
             "ch5_songlin_date": [
                 { type: "show", chars: ["songlin"] }, { type: "active", char: "songlin" },
-                { type: "say", who: "songlin", text: "...那就買這支。今晚陪我喝完它。不准先睡。" }, { type: "jump", next: "chapter6_start", stat: { songlin: 20 } }
+                { type: "say", who: "songlin", text: "...那就買這支紅酒。今晚陪我喝完它。不准先睡。" }, 
+                { type: "say", who: "narrator", text: "推車時，他的手指輕輕勾住了你的小指，試探又緊張。" },
+                { type: "jump", next: "chapter6_start", stat: { songlin: 20 } }
             ],
             "ch5_ruicheng_date": [
                 { type: "show", chars: ["ruicheng"] }, { type: "active", char: "ruicheng" },
-                { type: "say", who: "ruicheng", text: "Target locked... No offense，但我覺得這樣對我的心臟比較好。" }, { type: "jump", next: "chapter6_start", stat: { ruicheng: 20 } }
+                { type: "say", who: "ruicheng", text: "Target locked... No offense，但我要先看一下手機，你帶路。" }, 
+                { type: "say", who: "narrator", text: "在人潮擁擠的賣場，他緊緊抓著你的衣袖，像是在抓著唯一的浮木。兩人看起來像對小情侶" },
+                { type: "jump", next: "chapter6_start", stat: { ruicheng: 20 } }
             ],
 
-            // === 第六章 (抉擇) ===
+            // === Chapter 6 (Ending) ===
             "chapter6_start": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.night_street },
+                { type: "effect", name: "fade_in" },
                 { type: "hide", chars: ["lixuan", "songlin", "ruicheng"] },
                 { type: "say", who: "narrator", text: "第六章：總部的最終變數" },
-                { type: "say", who: "narrator", text: "今晚，必須把話說清楚，或者...永遠不說。" },
+                { type: "say", who: "narrator", text: "回到總部，另外兩位室友似乎察覺了什麼，早早躲回了房間。" },
+                { type: "say", who: "narrator", text: "客廳裡只剩下你和他。今晚，必須把話說清楚。" },
                 { type: "choice", options: [
-                    { text: "鼓起勇氣告白 (進入個人結局)", next: "calc_winner_node" },
-                    { text: "還是當朋友就好 (維持現狀)", next: "ending_friends" }
+                    { text: "鼓起勇氣告白", next: "calc_winner_node" },
+                    { text: "還是當朋友就好", next: "ending_friends" }
                 ]}
             ],
             "calc_winner_node": [
-                 { type: "say", who: "narrator", text: "（系統正在根據好感度計算命定之人...）" },
+                 { type: "say", who: "narrator", text: "（心跳聲震耳欲聾...你走向了...）" },
                  { type: "calc_winner" } 
             ],
             "ending_friends": [
@@ -519,12 +722,11 @@
                 { type: "say", who: "songlin", text: "（偷偷鬆了一口氣）...無聊。留一罐給我。" },
                 { type: "active", char: "ruicheng" },
                 { type: "say", who: "ruicheng", text: "Cheers! 這種友情線（Friendship Route）其實是最穩定的結構。" },
-                { type: "say", who: "narrator", text: "你們依然吵吵鬧鬧。那份悸動被小心翼翼地藏在玩笑話裡。" },
                 { type: "say", who: "narrator", text: "【Normal End: 微妙的好朋友】" },
                 { type: "check_stats" }
             ],
 
-            // === 結局：駱立軒 (含深夜分支) ===
+            // === Endings ===
             "ending_lixuan": [
                 { type: "bg", src: BACKGROUNDS.kitchen },
                 { type: "show", chars: ["lixuan"] }, { type: "active", char: "lixuan" },
@@ -533,8 +735,8 @@
                 { type: "say", who: "narrator", text: "他猛地把你拉進懷裡，手臂勒得你生疼。" },
                 { type: "say", who: "lixuan", text: "現在退貨來不及了。我賴定你了。" },
                 { type: "choice", options: [
-                    { text: "溫馨擁抱 (Happy End)", next: "lixuan_happy" },
-                    { text: "關燈... ", next: "lixuan_night" }
+                    { text: "溫馨擁抱", next: "lixuan_happy" },
+                    { text: "關燈...", next: "lixuan_night" }
                 ]}
             ],
             "lixuan_happy": [
@@ -542,28 +744,28 @@
                 { type: "check_stats" }
             ],
             "lixuan_night": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.bedroom_dark },
+                { type: "effect", name: "fade_in" },
                 { type: "effect", name: "blush" },
                 { type: "say", who: "lixuan", text: "（眼神突然變得幽深）...欸，既然都在一起了。" },
                 { type: "say", who: "lixuan", text: "你之前不是說想看我的肌肉練得怎麼樣了嗎？" },
-                { type: "say", who: "narrator", text: "他反手鎖上了廚房的門，喀嚓一聲。" },
-                { type: "say", who: "lixuan", text: "來我房間...我讓你親手確認一下。" },
-                { type: "say", who: "lixuan", text: "今晚的健身課，強度會很高喔，別半路求饒。" },
-                { type: "say", who: "narrator", text: "（畫面漸黑，只剩下急促的呼吸聲...）" },
+                { type: "say", who: "narrator", text: "他反手鎖上了門，把你逼到牆角。" },
+                { type: "say", who: "lixuan", text: "來，我讓你親手確認一下。今晚的健身課，強度會很高喔。" },
                 { type: "say", who: "narrator", text: "【Hidden End: 深夜的高強度有氧】" },
                 { type: "check_stats" }
             ],
 
-            // === 結局：吳松霖 (含深夜分支) ===
             "ending_songlin": [
                 { type: "bg", src: BACKGROUNDS.livingroom },
                 { type: "show", chars: ["songlin"] }, { type: "active", char: "songlin" },
                 { type: "say", who: "player", text: "松霖，我們不要再當室友了。當我的男朋友，好嗎？" },
                 { type: "say", who: "songlin", text: "（手抖了一下，酒灑出來）...你是白癡嗎？這種話...應該讓我來說啊。" },
+                { type: "effect", char: "songlin", name: "shy" },
                 { type: "say", who: "songlin", text: "既然簽約了就不准毀約。反正...除了你，也沒人受得了我了。" },
                 { type: "choice", options: [
-                    { text: "溫馨擁抱 (Happy End)", next: "songlin_happy" },
-                    { text: "吻他... ", next: "songlin_night" }
+                    { text: "溫馨擁抱", next: "songlin_happy" },
+                    { text: "吻他...", next: "songlin_night" }
                 ]}
             ],
             "songlin_happy": [
@@ -571,28 +773,29 @@
                 { type: "check_stats" }
             ],
             "songlin_night": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.bedroom_dark },
+                { type: "effect", name: "fade_in" },
                 { type: "effect", name: "blush" },
                 { type: "say", who: "narrator", text: "你主動吻了上去。酒精的味道在唇齒間蔓延。" },
                 { type: "say", who: "songlin", text: "唔......！" },
                 { type: "say", who: "narrator", text: "他愣了一秒，隨即奪回了主導權，把你推倒在沙發上。" },
                 { type: "say", who: "songlin", text: "（聲音沙啞）...這可是你自找的。別以為我喝醉了就會放過你。" },
                 { type: "say", who: "songlin", text: "今晚...我會把你身上的 Bug 全部檢查一遍。" },
-                { type: "say", who: "narrator", text: "（畫面漸黑，紅酒杯滾落在地毯上...）" },
                 { type: "say", who: "narrator", text: "【Hidden End: 徹夜的系統維護】" },
                 { type: "check_stats" }
             ],
 
-            // === 結局：蔡睿承 (含深夜分支) ===
             "ending_ruicheng": [
                 { type: "bg", src: BACKGROUNDS.livingroom },
                 { type: "show", chars: ["ruicheng"] }, { type: "active", char: "ruicheng" },
                 { type: "say", who: "player", text: "睿承，不要管二次元了。讓我當你的「現實」，好不好？" },
+                { type: "effect", char: "ruicheng", name: "angry" }, 
                 { type: "say", who: "ruicheng", text: "Wait... System Error... 你是說真的嗎？" },
                 { type: "say", who: "ruicheng", text: "我願意！Log in！Connect！我願意！" },
                 { type: "choice", options: [
-                    { text: "溫馨擁抱 (Happy End)", next: "ruicheng_happy" },
-                    { text: "深入交流... ", next: "ruicheng_night" }
+                    { text: "溫馨擁抱", next: "ruicheng_happy" },
+                    { text: "深入交流...", next: "ruicheng_night" }
                 ]}
             ],
             "ruicheng_happy": [
@@ -600,13 +803,14 @@
                 { type: "check_stats" }
             ],
             "ruicheng_night": [
+                { type: "effect", name: "fade_out" },
                 { type: "bg", src: BACKGROUNDS.bedroom_dark },
+                { type: "effect", name: "fade_in" },
                 { type: "effect", name: "blush" },
                 { type: "say", who: "ruicheng", text: "（摘下眼鏡，眼神變得異常認真）那个... No offense..." },
                 { type: "say", who: "ruicheng", text: "我雖然沒有實戰經驗 (Experience)，但我看過很多本子 (Doujinshi)，理論知識很充足。" },
                 { type: "say", who: "narrator", text: "他把你拉進房間，鎖上了門，手微微顫抖卻很堅定。" },
                 { type: "say", who: "ruicheng", text: "現在...我想申請進行人體實驗。請多多指教 (Please treat me well)。" },
-                { type: "say", who: "narrator", text: "（畫面漸黑，傳來衣物摩擦的聲音...）" },
                 { type: "say", who: "narrator", text: "【Hidden End: 理論與實踐的結合】" },
                 { type: "check_stats" }
             ]
@@ -615,20 +819,22 @@
         const dom = {
             bg: document.getElementById('bg-layer'),
             atmosphere: document.getElementById('atmosphere'),
+            drunkAtmosphere: document.getElementById('drunk-atmosphere'),
             dialogueBox: document.getElementById('dialogue-text'),
             nameBox: document.getElementById('dialogue-name'),
             choicesOverlay: document.getElementById('choices-overlay'),
             clickCatcher: document.getElementById('click-catcher'),
             titleScreen: document.getElementById('title-screen'),
             stats: { lixuan: document.getElementById('stat-lixuan'), songlin: document.getElementById('stat-songlin'), ruicheng: document.getElementById('stat-ruicheng') },
-            sprites: { lixuan: document.getElementById('sprite-lixuan'), songlin: document.getElementById('sprite-songlin'), ruicheng: document.getElementById('sprite-ruicheng') }
+            sprites: { lixuan: document.getElementById('sprite-lixuan'), songlin: document.getElementById('sprite-songlin'), ruicheng: document.getElementById('sprite-ruicheng') },
+            fadeOverlay: document.getElementById('fade-overlay')
         };
 
         function init() {
             dom.titleScreen.style.opacity = '0';
             setTimeout(() => { dom.titleScreen.style.display = 'none'; playScene(state.currentSceneId); }, 1000);
-            bgm.play().then(() => { bgmBtn.innerHTML = '<i class="fas fa-pause"></i> <span id="bgm-text">暫停音樂</span>'; })
-                   .catch(err => { console.log("自動播放被阻擋"); });
+            bgm.play().then(() => { bgmBtn.innerHTML = '<i class="fas fa-pause"></i> <span class="hidden md:inline">暫停</span>'; })
+                    .catch(err => { console.log("自動播放被阻擋"); });
         }
         document.getElementById('start-btn').addEventListener('click', init);
 
@@ -644,22 +850,54 @@
                 case "show": step.chars.forEach(id => { if(dom.sprites[id]) { dom.sprites[id].classList.remove('opacity-0'); dom.sprites[id].classList.add('opacity-50'); }}); nextStepAuto(); break;
                 case "hide": step.chars.forEach(id => { if(dom.sprites[id]) dom.sprites[id].classList.add('opacity-0'); }); nextStepAuto(); break;
                 case "active": 
-                    Object.values(dom.sprites).forEach(s => { s.classList.remove('active', 'opacity-100'); s.classList.add('opacity-50'); });
-                    if (dom.sprites[step.char]) { dom.sprites[step.char].classList.remove('opacity-50'); dom.sprites[step.char].classList.add('active', 'opacity-100'); }
+                    Object.values(dom.sprites).forEach(s => { 
+                        s.classList.remove('active', 'opacity-100', 'angry', 'shy', 'drunk'); 
+                        s.classList.add('opacity-50'); 
+                    });
+                    if (dom.sprites[step.char]) { 
+                        dom.sprites[step.char].classList.remove('opacity-50'); 
+                        dom.sprites[step.char].classList.add('active', 'opacity-100'); 
+                    }
                     nextStepAuto(); break;
                 case "choice": showChoices(step.options); break;
                 case "effect": 
                     if(step.name==="shake"){ document.body.classList.add('shake'); setTimeout(()=>document.body.classList.remove('shake'),500); }
                     if(step.name==="blush"){ dom.atmosphere.classList.add('blush-active'); }
-                    nextStepAuto(); break;
-                case "jump": if(step.stat) updateStats(step.stat); playScene(step.next); break;
+                    if(step.name==="drunk"){ dom.drunkAtmosphere.classList.add('drunk-active'); }
+                    if(step.name==="normal"){ 
+                        dom.atmosphere.classList.remove('blush-active'); 
+                        dom.drunkAtmosphere.classList.remove('drunk-active'); 
+                    }
+                    if(step.name==="fade_out"){ dom.fadeOverlay.classList.add('fade-active'); setTimeout(nextStepAuto, 1000); return; }
+                    if(step.name==="fade_in"){ dom.fadeOverlay.classList.remove('fade-active'); setTimeout(nextStepAuto, 1000); return; }
+                    
+                    if(step.char && dom.sprites[step.char]) {
+                        if(step.name === "angry") dom.sprites[step.char].classList.add('angry');
+                        if(step.name === "shy") dom.sprites[step.char].classList.add('shy');
+                        if(step.name === "drunk") dom.sprites[step.char].classList.add('drunk');
+                    }
+                    if(step.name !== "fade_out" && step.name !== "fade_in") nextStepAuto(); 
+                    break;
+                case "jump": 
+                    if(step.stat) updateStats(step.stat); 
+                    if(step.flag) state.flags[step.flag] = true;
+                    playScene(step.next); 
+                    break;
                 case "check_stats": showFinalStats(); break;
                 case "calc_winner":
                     const s = state.stats;
                     const maxScore = Math.max(s.lixuan, s.songlin, s.ruicheng);
                     const winners = Object.keys(s).filter(key => s[key] === maxScore);
-                    if (winners.length === 1) { const winner = winners[0]; setTimeout(() => playScene('ending_' + winner), 1000); } 
-                    else { showChoices([ { text: "走向廚房：找 駱立軒", next: "ending_lixuan" }, { text: "走向落地窗：找 吳松霖", next: "ending_songlin" }, { text: "走向儲藏室：找 蔡睿承", next: "ending_ruicheng" } ]); }
+                    if (winners.length === 1) { 
+                        const winner = winners[0]; 
+                        setTimeout(() => playScene('ending_' + winner), 1000); 
+                    } else { 
+                        showChoices([ 
+                            { text: "走向廚房：找 駱立軒", next: "ending_lixuan" }, 
+                            { text: "走向落地窗：找 吳松霖", next: "ending_songlin" }, 
+                            { text: "走向儲藏室：找 蔡睿承", next: "ending_ruicheng" } 
+                        ]); 
+                    }
                     break;
             }
         }
@@ -688,7 +926,12 @@
                 const btn = document.createElement('button');
                 btn.className = "w-full max-w-lg bg-gray-800 hover:bg-pink-700 text-white font-bold py-4 px-6 rounded-xl border border-gray-600 transition transform hover:scale-105 shadow-xl text-left";
                 btn.innerText = opt.text;
-                btn.onclick = () => { if (opt.stat) updateStats(opt.stat); dom.choicesOverlay.classList.add('hidden'); playScene(opt.next); };
+                btn.onclick = () => { 
+                    if (opt.stat) updateStats(opt.stat); 
+                    if (opt.flag) state.flags[opt.flag] = true;
+                    dom.choicesOverlay.classList.add('hidden'); 
+                    playScene(opt.next); 
+                };
                 dom.choicesOverlay.appendChild(btn);
             });
         }
@@ -701,7 +944,51 @@
             dom.dialogueBox.innerHTML = `<span class="text-pink-400">感謝遊玩！</span><br>如果喜歡這個故事，請重新整理網頁嘗試其他路線！`;
             setSpeaker('narrator');
         }
+
+        async function callGemini(prompt) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (error) {
+                return "AI 連線中斷...請檢查 API Key 或網路。";
+            }
+        }
+
+        const btnAI = document.getElementById('btn-ai');
+        const aiModal = document.getElementById('ai-modal');
+        const btnCloseAI = document.getElementById('btn-close-ai');
+        const aiContent = document.getElementById('ai-content');
+
+        btnAI.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            aiModal.classList.remove('hidden');
+            aiContent.innerHTML = '<div class="ai-loading text-purple-300">正在分析戀愛數據，請稍候...</div>';
+
+            const currentSceneData = STORY[state.currentSceneId];
+            const currentStepData = currentSceneData ? currentSceneData[state.sceneStep] : null;
+            let context = `玩家正在遊玩 BL 戀愛遊戲《總部後宮》。現狀：好感度：立軒(${state.stats.lixuan}), 松霖(${state.stats.songlin}), 睿承(${state.stats.ruicheng})。已觸發事件(Flags)：${JSON.stringify(state.flags)}。目前場景 ID: ${state.currentSceneId}`;
+            if (currentStepData && currentStepData.type === 'say') {
+                context += `現在是「${CHARACTERS[currentStepData.who]?.name || currentStepData.who}」在說話：「${currentStepData.text}」`;
+            }
+            const prompt = `${context} 請扮演一個毒舌又好笑的「戀愛參謀 AI」。根據玩家目前的處境、好感度和已觸發的事件，給出一句簡短的建議或吐槽（50字以內）。如果是深夜場景或氣氛曖昧，可以稍微色一點點。請用繁體中文。`;
+
+            if (apiKey) {
+                const aiResponse = await callGemini(prompt);
+                aiContent.innerText = aiResponse;
+            } else {
+                aiContent.innerText = "逼逼逼 AI分析顯示...... 立軒愛打炮 逼逼逼";
+            }
+        });
+
+        btnCloseAI.addEventListener('click', (e) => { e.stopPropagation(); aiModal.classList.add('hidden'); });
+        aiModal.addEventListener('click', (e) => { if (e.target === aiModal) aiModal.classList.add('hidden'); });
+
     </script>
 </body>
 </html>
-
