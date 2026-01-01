@@ -94,17 +94,17 @@
         <div id="sprites-container" class="absolute bottom-0 w-full h-full flex justify-center items-end pointer-events-none pb-0 px-4">
             <!-- 松霖 -->
             <img id="sprite-songlin" 
-                 src="songlin.jpg" 
+                 src="songlin.png" 
                  class="sprite absolute left-[-10%] md:left-[5%] h-[75vh] opacity-0" 
                  alt="松霖">
             <!-- 睿承 -->
             <img id="sprite-ruicheng" 
-                 src="ruicheng.jpg" 
+                 src="ruicheng.png" 
                  class="sprite absolute right-[-10%] md:right-[5%] h-[75vh] opacity-0" 
                  alt="睿承">
             <!-- 立軒 -->
             <img id="sprite-lixuan" 
-                 src="lixuan.jpg" 
+                 src="lixuan.png" 
                  class="sprite absolute h-[80vh] opacity-0" 
                  alt="立軒">
         </div>
@@ -158,7 +158,7 @@
 
         <div id="title-screen" class="absolute inset-0 bg-black z-50 flex flex-col items-center justify-center text-center p-8 transition-opacity duration-1000">
             <h1 class="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-4">總部後宮戀愛模擬</h1>
-            <p class="text-gray-400 text-xl mb-8">請確保音檔與圖片位於同一資料夾</p>
+            <p class="text-gray-400 text-xl mb-8">請點擊畫面</p>
             <button id="start-btn" class="px-8 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-full text-xl font-bold transition shadow-lg shadow-pink-500/30">開始遊戲</button>
         </div>
 
@@ -280,9 +280,9 @@
             let context = `
             遊戲背景：BL戀愛模擬遊戲《總部後宮》。
             玩家正在和三位性格迥異的室友同居：
-            1. 駱立軒（立軒）：肌肉男、大直男、愛吃、色狼。
-            2. 吳松霖（松霖）：傲嬌工程師、毒舌、其實很照顧人。
-            3. 蔡睿承（睿承）：膽小宅男、容易緊張、中英夾雜、動漫迷。
+            1. 駱立軒（立軒）：愛健身、大直男、愛吃、色狼。
+            2. 吳松霖（松霖）：傲嬌、反同但深櫃、工程師、毒舌、不合群。
+            3. 蔡睿承（睿承）：宅男、容易緊張、中英夾雜、動漫迷、英文很爛。
             
             目前好感度：
             - 立軒: ${state.stats.lixuan}
@@ -308,6 +308,7 @@
             
             請扮演一個「總部 AI 戀愛參謀」，用幽默、有點毒舌、但又有建設性的語氣，給予玩家一句簡短的建議或吐槽（50字以內）。
             針對目前的情況，分析哪位男角最有機會，或者警告玩家小心什麼。
+            也可以吐槽關於這些人誰看起來最像同性戀。
             請使用繁體中文回答。
             `;
 
@@ -402,7 +403,7 @@
                 { type: "say", who: "songlin", text: "唔......嘖！（深蹲腿軟）" },
                 { type: "choice", options: [
                     { text: "站在旁邊看戲", next: "ch3_watch_songlin" },
-                    { text: "上前補手(Spotting) (隱藏事件)", next: "ch3_help_songlin", stat: { songlin: 20 } }
+                    { text: "上前幫忙扶", next: "ch3_help_songlin", stat: { songlin: 20 } }
                 ]}
             ],
             "ch3_watch_songlin": [
@@ -420,7 +421,7 @@
                 { type: "say", who: "narrator", text: "你去更衣室上廁所，剛好看到駱立軒剛沖完澡走出來。全裸，只用毛巾擦頭。" },
                 { type: "choice", options: [
                     { text: "低頭快速通過", next: "ch3_ignore_lixuan" },
-                    { text: "轉頭看一眼 (隱藏事件)", next: "ch3_look_lixuan", stat: { lixuan: 20 } }
+                    { text: "轉頭瞄一眼", next: "ch3_look_lixuan", stat: { lixuan: 20 } }
                 ]}
             ],
             "ch3_ignore_lixuan": [
@@ -436,14 +437,14 @@
                 { type: "say", who: "ruicheng", text: "My legs... they are gone. 我覺得我的肌纖維正在解離..." },
                 { type: "choice", options: [
                     { text: "叫立軒把他扛回去", next: "ch3_carry_ruicheng" },
-                    { text: "親自攙扶他 (隱藏事件)", next: "ch3_help_ruicheng", stat: { ruicheng: 20 } }
+                    { text: "親自攙扶他", next: "ch3_help_ruicheng", stat: { ruicheng: 20 } }
                 ]}
             ],
             "ch3_carry_ruicheng": [
                 { type: "say", who: "narrator", text: "立軒像扛瓦斯桶一樣把他扛走，睿承一路尖叫。" }, { type: "jump", next: "chapter4_start" }
             ],
             "ch3_help_ruicheng": [
-                { type: "say", who: "narrator", text: "你摟住他的腰。他整個人掛在你身上，心跳快得不正常。" },
+                { type: "say", who: "narrator", text: "你摟住他的腰。他整個人掛在你身上，心跳快得不正常。你感覺到他的大腿間有東西碰到你，但並不是手機或錢包。" },
                 { type: "say", who: "ruicheng", text: "Wait...這不科學。難道是腎上腺素？" }, { type: "jump", next: "chapter4_start" }
             ],
             "chapter4_start": [
@@ -533,7 +534,7 @@
                 { type: "say", who: "lixuan", text: "現在退貨來不及了。我賴定你了。" },
                 { type: "choice", options: [
                     { text: "溫馨擁抱 (Happy End)", next: "lixuan_happy" },
-                    { text: "關燈... (進入隱藏深夜線)", next: "lixuan_night" }
+                    { text: "關燈... ", next: "lixuan_night" }
                 ]}
             ],
             "lixuan_happy": [
@@ -562,7 +563,7 @@
                 { type: "say", who: "songlin", text: "既然簽約了就不准毀約。反正...除了你，也沒人受得了我了。" },
                 { type: "choice", options: [
                     { text: "溫馨擁抱 (Happy End)", next: "songlin_happy" },
-                    { text: "吻他... (進入隱藏深夜線)", next: "songlin_night" }
+                    { text: "吻他... ", next: "songlin_night" }
                 ]}
             ],
             "songlin_happy": [
@@ -591,7 +592,7 @@
                 { type: "say", who: "ruicheng", text: "我願意！Log in！Connect！我願意！" },
                 { type: "choice", options: [
                     { text: "溫馨擁抱 (Happy End)", next: "ruicheng_happy" },
-                    { text: "深入交流... (進入隱藏深夜線)", next: "ruicheng_night" }
+                    { text: "深入交流... ", next: "ruicheng_night" }
                 ]}
             ],
             "ruicheng_happy": [
@@ -703,3 +704,4 @@
     </script>
 </body>
 </html>
+
